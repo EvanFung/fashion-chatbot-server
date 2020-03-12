@@ -1,0 +1,273 @@
+{
+    "category_tree": {
+        "id_catalog_category": "3",
+        "name": "Women's Clothing",
+        "name_en": "Women's Clothing",
+        "default_name": "Women's Clothing",
+        "segments": "Women",
+        "segment_urls": "women",
+        "url_key": "clothing",
+        "category_urls": {
+            "women": "/women/clothing"
+        },
+        "children": [
+            {
+                "id_catalog_category": "25",
+                "name": "Dresses",
+                "name_en": "Dresses",
+                "default_name": "Dresses",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "dresses",
+                "category_urls": {
+                    "women": "/women/clothing/dresses"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "24",
+                "name": "Tops",
+                "name_en": "Tops",
+                "default_name": "Tops",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "fashion-tops",
+                "category_urls": {
+                    "women": "/women/clothing/fashion-tops"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "417",
+                "name": "Pants \u0026 Leggings",
+                "name_en": "Pants \u0026 Leggings",
+                "default_name": "Pants \u0026 Leggings",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "pants-leggings",
+                "category_urls": {
+                    "women": "/women/clothing/pants-leggings"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "18",
+                "name": "Jeans",
+                "name_en": "Jeans",
+                "default_name": "Jeans",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "jeans",
+                "category_urls": {
+                    "women": "/women/clothing/jeans"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "16",
+                "name": "Skirts",
+                "name_en": "Skirts",
+                "default_name": "Skirts",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "skirts",
+                "category_urls": {
+                    "women": "/women/clothing/skirts"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "17",
+                "name": "Shorts",
+                "name_en": "Shorts",
+                "default_name": "Shorts",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "shorts",
+                "category_urls": {
+                    "women": "/women/clothing/shorts"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "5969",
+                "name": "Knitwear \u0026 Cardigans",
+                "name_en": "Knitwear \u0026 Cardigans",
+                "default_name": "Knitwear \u0026 Cardigans",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "knitwear-cardigans",
+                "category_urls": {
+                    "women": "/women/clothing/knitwear-cardigans"
+                },
+                "children": null,
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "5968",
+                "name": "Hoodies \u0026 Sweatshirts",
+                "name_en": "Hoodies \u0026 Sweatshirts",
+                "default_name": "Hoodies \u0026 Sweatshirts",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "hoodies-sweatshirts",
+                "category_urls": {
+                    "women": "/women/clothing/hoodies-sweatshirts"
+                },
+                "children": null,
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "5966",
+                "name": "Jackets \u0026 Coats",
+                "name_en": "Jackets \u0026 Coats",
+                "default_name": "Jackets \u0026 Coats",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "jackets-coats",
+                "category_urls": {
+                    "women": "/women/clothing/jackets-coats"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "5967",
+                "name": "Blazers",
+                "name_en": "Blazers",
+                "default_name": "Blazers",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "blazers",
+                "category_urls": {
+                    "women": "/women/clothing/blazers"
+                },
+                "children": null,
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "2365",
+                "name": "Lingerie \u0026 Sleepwear",
+                "name_en": "Lingerie \u0026 Sleepwear",
+                "default_name": "Lingerie \u0026 Sleepwear",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "lingerie-sleepwear",
+                "category_urls": {
+                    "women": "/women/clothing/lingerie-sleepwear"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "190",
+                "name": "Playsuits \u0026 Jumpsuits",
+                "name_en": "Playsuits \u0026 Jumpsuits",
+                "default_name": "Playsuits \u0026 Jumpsuits",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "playsuits-jumpsuits",
+                "category_urls": {
+                    "women": "/women/clothing/playsuits-jumpsuits"
+                },
+                "children": null,
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "820",
+                "name": "Swimwear \u0026 Beachwear",
+                "name_en": "Swimwear \u0026 Beachwear",
+                "default_name": "Swimwear \u0026 Beachwear",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "swimwear-beachwear",
+                "category_urls": {
+                    "women": "/women/clothing/swimwear-beachwear"
+                },
+                "children": [],
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "3745",
+                "name": "Socks \u0026 Tights",
+                "name_en": "Socks \u0026 Tights",
+                "default_name": "Socks \u0026 Tights",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "socks-tights",
+                "category_urls": {
+                    "women": "/women/clothing/socks-tights"
+                },
+                "children": [],
+                "primary": "1",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "3370",
+                "name": "Petite",
+                "name_en": "Petite",
+                "default_name": "Petite",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "petite",
+                "category_urls": {
+                    "women": "/women/clothing/petite"
+                },
+                "children": null,
+                "primary": "1",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "5350",
+                "name": "Plus Size",
+                "name_en": "Plus Size",
+                "default_name": "Plus Size",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "plus-size",
+                "category_urls": {
+                    "women": "/women/clothing/plus-size"
+                },
+                "children": null,
+                "primary": "0",
+                "depth": "3"
+            },
+            {
+                "id_catalog_category": "5351",
+                "name": "Maternity",
+                "name_en": "Maternity",
+                "default_name": "Maternity",
+                "segments": "Women",
+                "segment_urls": "women",
+                "url_key": "maternity",
+                "category_urls": {
+                    "women": "/women/clothing/maternity"
+                },
+                "children": null,
+                "primary": "0",
+                "depth": "3"
+            }
+        ],
+        "primary": "0",
+        "depth": "2"
+    }
+}

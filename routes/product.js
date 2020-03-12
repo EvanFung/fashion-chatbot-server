@@ -1,10 +1,10 @@
 'use strict';
 var router = require('express').Router();
 var AV = require('leanengine');
-var Todo = AV.Object.extend('Todo');
-const CARD_RESPONSE = 'CARD_RESPONSE';
 const { google } = require('googleapis');
+const { WebhookClient, Text, Card, Image, Suggestion, Payload } = require('dialogflow-fulfillment');
 const customsearch = google.customsearch('v1');
+const { men_map, women_map, kid_map } = require('../category');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -24,7 +24,7 @@ router.get('/', async function (req, res, next) {
     // console.log(items[0].snippet);
     // console.log(queries);
     // console.log(searchInformation);
-    console.log(Math.floor(Math.random() * 5));
+    // console.log(Math.floor(Math.random() * 5));
     res.json({
         hello: 'world'
 
@@ -32,23 +32,264 @@ router.get('/', async function (req, res, next) {
 });
 
 router.post('/', async function (req, res, next) {
-    const action = req.body.queryResult.action;
-    const productParam = req.body.queryResult.parameters.product;
-    let fulfillmentResponse;
-    if (action === 'product.search' && productParam != null) {
-        let productCategory = req.body.queryResult.parameters.product;
-        console.log(productCategory);
-        fulfillmentResponse = await handleProductSearch(req.body.queryResult);
-        console.log(fulfillmentResponse);
-        res.send(fulfillmentResponse);
-    } else {
-        res.send(createResponseText(`I don't know what is it..I am so stupid`));
+    // const action = req.body.queryResult.action;
+    // const productParam = req.body.queryResult.parameters.product;
+    // let fulfillmentResponse;
+    // if (action === 'product.search' && productParam != null) {
+    //     let productCategory = req.body.queryResult.parameters.product;
+    //     // fulfillmentResponse = await handleProductSearch(req.body.queryResult);
+    //     // console.log(fulfillmentResponse);
+    //     fulfillmentResponse = createQuickResponse("helloworld")
+    //     res.send(fulfillmentResponse);
+    // } else {
+    //     res.send(createResponseText(`I don't know what is it..I am so stupid`));
+    // }
+
+    const agent = new WebhookClient({ request: req, response: res });
+    let page = 0;
+    // agent.requestSource = 'PLATFORM_UNSPECIFIED';
+
+    async function productSearch(agent) {
+        let missingSlots = [];
+        const [color, brand, category, gender] = [agent.parameters['product_color'], agent.parameters['product_brand'], agent.parameters['product_category'], agent.parameters['user_gender']];
+        if (!color) { missingSlots.push('color'); }
+        if (!brand) { missingSlots.push('brand'); }
+        if (!category) { missingSlots.push('category'); }
+        if (!gender) { missingSlots.push('gender') }
+        if (missingSlots.length === 1) {
+            //Ask brand
+            agent.add(`Looks like you didn't provide a ${missingSlots[0]} for the product`);
+        } else if (missingSlots.length === 2) {
+            //Ask color
+            agent.add(`Looks like you didn't provide a ${missingSlots[0]} and ${missingSlots[1]}`);
+        } else if (missingSlots.length === 3) {
+            //Ask category
+            agent.add(`Looks like you didn't provide a ${missingSlots[0]}, ${missingSlots[1]} and ${missingSlots[2]}`);
+            if (gender == 'Male') {
+                men_map.forEach(function (value, key, map) {
+                    agent.add(new Suggestion(`${key}`));
+                });
+            } else if (gender == 'Female') {
+                women_map.forEach(function (value, key, map) {
+                    agent.add(new Suggestion(`${key}`));
+                });
+            } else {
+                kid_map.forEach(function (value, key, map) {
+                    agent.add(new Suggestion(`${key}`));
+                });
+            }
+        } else if (missingSlots.length === 4) {
+            //Ask gender
+            agent.add(`Halo, Can you provide some informations about the product? Gender, Color, Brand and Category are required.`);
+            agent.add(`Looks like you didn't provide a ${missingSlots[0]}, ${missingSlots[1]} , ${missingSlots[2]} and ${missingSlots[3]}`);
+            agent.add(`Firstly, Can you provide the product gender? Thanks`);
+            agent.add(new Suggestion(`Male`));
+            agent.add(new Suggestion(`Female`));
+            agent.add(new Suggestion(`Kid`));
+        } else {
+            console.log(`${color} ${brand} ${category} ${gender}`);
+            let category_map;
+            if (gender == 'Male') {
+                category_map = men_map;
+            } else if (gender == 'Female') {
+                category_map = women_map;
+            }
+            else {
+                category_map = kid_map;
+            }
+            //User fill out all fields
+            let query = new AV.Query('Product2');
+            query.contains('categories', category_map.get(category));
+            query.equalTo('color_family', color);
+            query.equalTo('brand', brand);
+            query.addDescending('rating');
+            query.limit(5);
+            let products = await query.find();
+            products.forEach(function (product, index) {
+                let card = new Card(product.get('title'));
+                if (product.get('image_url_').length > 0 && product.get('product_url') !== undefined) {
+                    card.setImage(product.get('image_url_')[0].url);
+                    card.setButton({ 'text': 'Detail', 'url': product.get('product_url') });
+                    card.setText(`size system brand: ${product.get('sizesystembrand')} \n color: ${product.get('color_family')}`);
+                    agent.add(card);
+                } else {
+                    agent.add(`Sorry, this product has unexpected error, cannot show you...try again later`);
+
+                }
+            });
+        }
+
+        // agent.context.set('product.search.detail');
+        // agent.add(new Text('WHAT THE FUCK SAY?'));
+        // agent.add(new Text('WHAT THE FUCK SAY?'));
+        // agent.add(new Text('WHAT THE FUCK SAY?'));
+        // agent.add(new Card({
+        //     title: `Title: this is a card title`,
+        //     imageUrl: 'imageUrl',
+        //     text: `This is the body text of a card.  You can even use line\n  breaks and emoji! 💁`,
+        //     buttonText: 'This is a button',
+        //     buttonUrl: 'linkUrl'
+        // }));
+        // agent.add(new Image('https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png'));
+        // agent.add(new Suggestion('fuck fuck?'));
+        // //it needs to specify the request source if sending a carousel... I means custom payload.
+        // agent.add(new Payload('PLATFORM_UNSPECIFIED', { "A": "B" }));
     }
+
+
+    function welcome(agent) {
+        page = 0;
+        var possibleResponse1 = [
+            `Hey! I'm Fashion Chatbot, your AI stylist. I can recommend you clothes and outfits selected just for you. What are you looking for today?`,
+            `Hi, What are you looking for today? May be I can recommend some clothes and outfits just for you.`,
+            `Hi, what can I help you? I'm your recommender chatbot!`
+        ];
+        var possibleResponse2 = [
+            `The fashion AI won't collect your personal data!! You can feel free to use it!`,
+            `We won't collect your personal data. You can feel free to use it!`
+        ];
+        var pick1 = Math.floor(Math.random() * possibleResponse1.length);
+        var pick2 = Math.floor(Math.random() * possibleResponse2.length);
+        agent.add(possibleResponse1[pick1]);
+        agent.add(possibleResponse2[pick2]);
+        agent.add(new Suggestion(`Product search`));
+        agent.add(new Suggestion(`Recommendation`));
+        agent.add(new Suggestion(`Product Browse`));
+    }
+
+
+    function browseProduct(agent) {
+        let missingSlots = [];
+        var possibleResponse1 = [
+            `Would you tell gender of the collections that you looking for?`,
+            `Would you tell us gender of the product?`
+        ];
+        var possibleResponse2 = [
+            `Here are our collections. Check it out!`,
+            `There are many categories of products. Choose one that you like to continue.`
+        ];
+        var pick1 = Math.floor(Math.random() * possibleResponse1.length);
+        var pick2 = Math.floor(Math.random() * possibleResponse2.length);
+
+        const [gender] = [agent.parameters['product_gender']];
+        if (!gender) { missingSlots.push('gender'); }
+        if (missingSlots.length == 1) {
+            agent.add(possibleResponse1[pick1]);
+            agent.add(`Looks like you didn't provide a ${missingSlots[0]} for the product`);
+            agent.add(new Suggestion(`Male`));
+            agent.add(new Suggestion(`Female`));
+            agent.add(new Suggestion(`Kid`));
+        } else {
+            agent.add(possibleResponse2[pick2]);
+            if (gender == 'Male') {
+                men_map.forEach(function (value, key, map) {
+                    agent.add(new Suggestion(`${key}`));
+                });
+            } else if (gender == 'Female') {
+                women_map.forEach(function (value, key, map) {
+                    agent.add(new Suggestion(`${key}`));
+                });
+            } else {
+                kid_map.forEach(function (value, key, map) {
+                    agent.add(new Suggestion(`${key}`));
+                });
+            }
+        }
+
+
+    }
+
+
+    async function browseProductSearch(agent) {
+        let missingSlots = [];
+        const [category] = [agent.parameters['product_category']];
+        if (!category) { missingSlots.push(`category`); }
+        if (missingSlots.length == 1) {
+            agent.add(`Looks like you didn't provide a ${missingSlots[0]} for the product`);
+        } else {
+            let query = new AV.Query('Product2');
+            let gender = agent.contexts[0].parameters['product_gender'];
+            let category_map;
+            if (gender == 'Male') {
+                category_map = men_map;
+            } else if (gender == 'Female') {
+                category_map = women_map;
+            }
+            else {
+                category_map = kid_map;
+            }
+            query.contains('categories', category_map.get(category));
+            query.exists('image_url_');
+            query.exists('product_url');
+            query.limit(5);
+            let products = await query.find();
+            products.forEach(function (product, index) {
+                let card = new Card(product.get('title'));
+                if (product.get('image_url_').length > 0 && product.get('product_url') !== undefined) {
+                    card.setImage(product.get('image_url_')[0].url);
+                    card.setButton({ 'text': 'Detail', 'url': product.get('product_url') });
+                    card.setText(`The product Size system brand: ${product.get('sizesystembrand')} \n color: ${product.get('color_family')}`);
+                    agent.add(card);
+                } else {
+                    agent.add(`Sorry, this product has unexpected error, cannot show you...try again later`);
+                }
+
+            });
+        }
+    }
+
+
+    async function browseProductSearchContinue(agent) {
+        //we get the product_browse context parameters.
+        let gender = agent.contexts[1].parameters['product_gender'];
+        let category = agent.contexts[1].parameters['product_category'];
+
+        let query = new AV.Query('Product2');
+        let category_map;
+        if (gender == 'Male') {
+            category_map = men_map;
+        } else if (gender == 'Female') {
+            category_map = women_map;
+        }
+        else {
+            category_map = kid_map;
+        }
+        page = page + 5;
+        console.log(page);
+        query.contains('categories', category_map.get(category));
+        query.exists('image_url_');
+        query.exists('product_url');
+        query.skip(page);
+        query.limit(5);
+        let products = await query.find();
+        products.forEach(function (product, index) {
+            let card = new Card(product.get('title'));
+            if (product.get('image_url_').length > 0 && product.get('product_url') !== undefined) {
+                card.setImage(product.get('image_url_')[0].url);
+                card.setButton({ 'text': 'Detail', 'url': product.get('product_url') });
+                card.setText(`The product Size system brand: ${product.get('sizesystembrand')} \n color: ${product.get('color_family')}`);
+                agent.add(card);
+            } else {
+                agent.add(`Sorry, this product has unexpected error...try again later`);
+            }
+
+        });
+    }
+
+
+    let intentMap = new Map();
+    intentMap.set("product.search.detail", productSearch);
+    intentMap.set("Default Welcome Intent", welcome);
+    intentMap.set("product.browser", browseProduct);
+    intentMap.set("product.browse.search", browseProductSearch);
+    intentMap.set("product.browse.search - more", browseProductSearchContinue);
+    agent.handleRequest(intentMap);
 });
 
 
 async function handleProductSearch(queryResult) {
     let productCategory = queryResult.parameters.product;
+
     //list of treding products.
     let products;
     if (productCategory != null) {
@@ -143,6 +384,73 @@ function createResponseText(textResponse) {
                     ]
                 },
             },
+        ],
+        "source": "example.com",
+        "payload": {
+        }
+    };
+    return response;
+}
+
+function createResponseCarousel(textResponse) {
+    let response = {
+        "fulfillmentText": textResponse,
+        "fulfillmentMessages": [
+            {
+                "text": {
+                    "text": [
+                        textResponse
+                    ]
+                },
+            },
+            {
+                "carouselSelect": {
+                    "items": [
+                        {
+                            "info": {
+                                "key": "",
+                                "synonyms": ["a", "b"]
+                            },
+                            "title": "sds",
+                            "description": "sdnsidnsidni",
+                            "image": {
+                                "image_uri": "hhsudhusd",
+                                "accessibility_text": "sdnisndin"
+                            }
+                        },
+
+                    ]
+                }
+            }
+        ],
+        "source": "example.com",
+        "payload": {
+        }
+    };
+    return response;
+}
+
+
+function createQuickResponse(textResponse) {
+    let response = {
+        "fulfillmentText": textResponse,
+        "fulfillmentMessages": [
+            {
+                "text": {
+                    "text": [
+                        textResponse
+                    ]
+                },
+            },
+            {
+                "quick_replies": {
+                    "title": "sdnhusdhi",
+                    "quick_replies": [
+                        "shduhsu",
+                        "dhhdhdhdhd"
+                    ]
+                }
+            }
         ],
         "source": "example.com",
         "payload": {

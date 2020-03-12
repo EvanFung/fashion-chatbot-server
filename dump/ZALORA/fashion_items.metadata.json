@@ -1,0 +1,1 @@
+{"options":{},"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_","ns":"ZALORA.fashion_items"}],"uuid":"2c230145fa9748b1b6510af03b8bda0b"}
