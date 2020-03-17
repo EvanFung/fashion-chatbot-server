@@ -1,5 +1,5 @@
 'use strict';
-var router = require('express').Router();
+const { Router } = require('express')
 var AV = require('leanengine');
 const { google } = require('googleapis');
 const { WebhookClient, Text, Card, Image, Suggestion, Payload } = require('dialogflow-fulfillment');
@@ -7,6 +7,7 @@ const customsearch = google.customsearch('v1');
 const { men_map, women_map, kid_map } = require('../category');
 const dotenv = require('dotenv');
 dotenv.config();
+const router = module.exports = new Router
 
 
 
@@ -23,28 +24,12 @@ router.get('/', async function (req, res, next) {
     // console.log(items[0].title);
     // console.log(items[0].snippet);
     // console.log(queries);
-    // console.log(searchInformation);
-    // console.log(Math.floor(Math.random() * 5));
     res.json({
         hello: 'world'
-
     });
 });
 
 router.post('/', async function (req, res, next) {
-    // const action = req.body.queryResult.action;
-    // const productParam = req.body.queryResult.parameters.product;
-    // let fulfillmentResponse;
-    // if (action === 'product.search' && productParam != null) {
-    //     let productCategory = req.body.queryResult.parameters.product;
-    //     // fulfillmentResponse = await handleProductSearch(req.body.queryResult);
-    //     // console.log(fulfillmentResponse);
-    //     fulfillmentResponse = createQuickResponse("helloworld")
-    //     res.send(fulfillmentResponse);
-    // } else {
-    //     res.send(createResponseText(`I don't know what is it..I am so stupid`));
-    // }
-
     const agent = new WebhookClient({ request: req, response: res });
     let page = 0;
     // agent.requestSource = 'PLATFORM_UNSPECIFIED';
@@ -119,21 +104,6 @@ router.post('/', async function (req, res, next) {
             });
         }
 
-        // agent.context.set('product.search.detail');
-        // agent.add(new Text('WHAT THE FUCK SAY?'));
-        // agent.add(new Text('WHAT THE FUCK SAY?'));
-        // agent.add(new Text('WHAT THE FUCK SAY?'));
-        // agent.add(new Card({
-        //     title: `Title: this is a card title`,
-        //     imageUrl: 'imageUrl',
-        //     text: `This is the body text of a card.  You can even use line\n  breaks and emoji! 💁`,
-        //     buttonText: 'This is a button',
-        //     buttonUrl: 'linkUrl'
-        // }));
-        // agent.add(new Image('https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png'));
-        // agent.add(new Suggestion('fuck fuck?'));
-        // //it needs to specify the request source if sending a carousel... I means custom payload.
-        // agent.add(new Payload('PLATFORM_UNSPECIFIED', { "A": "B" }));
     }
 
 
@@ -277,12 +247,41 @@ router.post('/', async function (req, res, next) {
     }
 
 
+    async function productRecommendation(agent) {
+        let missingSlots = [];
+        const [user_id] = [agent.parameters['user_id']];
+        if (!user_id) { missingSlots.push(`user_id`); }
+        if (missingSlots.length == 1) {
+            agent.add(`Looks like you didn't provide a ${missingSlots[0]}? You can find it in your profile.`);
+        } else {
+            let query = new AV.Query('Recommend');
+            query.equalTo('uId', `${user_id}`);
+            let recommend = await query.find();
+            let products = recommend[0].get('products');
+            products.forEach(function (product, index) {
+                let p = JSON.parse(product);
+                console.log(p.title)
+                let card = new Card(p.title);
+                if (p.imageUrl) {
+                    card.setImage(p.imageUrl)
+                    card.setButton({ 'text': 'Detail', 'url': `${p.pId}` })
+                    card.setText(p.description)
+                    agent.add(card)
+                }
+            });
+        }
+
+
+    }
+
+
     let intentMap = new Map();
     intentMap.set("product.search.detail", productSearch);
     intentMap.set("Default Welcome Intent", welcome);
     intentMap.set("product.browser", browseProduct);
     intentMap.set("product.browse.search", browseProductSearch);
     intentMap.set("product.browse.search - more", browseProductSearchContinue);
+    intentMap.set("product.recommendation", productRecommendation);
     agent.handleRequest(intentMap);
 });
 

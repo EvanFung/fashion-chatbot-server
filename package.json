@@ -19,7 +19,8 @@
     "express": "^4.16.4",
     "googleapis": "^47.0.0",
     "leancloud-storage": "^3.11.0",
-    "leanengine": "^3.5.0"
+    "leanengine": "^3.5.0",
+    "uuid": "^7.0.2"
   },
   "devDependencies": {
     "nodemon": "^1.19.4"
