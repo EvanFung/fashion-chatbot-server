@@ -4,7 +4,9 @@ var AV = require('leanengine');
 const { google } = require('googleapis');
 const { WebhookClient, Text, Card, Image, Suggestion, Payload } = require('dialogflow-fulfillment');
 const customsearch = google.customsearch('v1');
-const { men_map, women_map, kid_map } = require('../category');
+const { colors } = require('../models/colors');
+const { product_category } = require('../models/product_category');
+const { men_map, women_map, kid_map, product_articleType } = require('../category');
 const dotenv = require('dotenv');
 dotenv.config();
 const router = module.exports = new Router
@@ -36,72 +38,45 @@ router.post('/', async function (req, res, next) {
 
     async function productSearch(agent) {
         let missingSlots = [];
-        const [color, brand, category, gender] = [agent.parameters['product_color'], agent.parameters['product_brand'], agent.parameters['product_category'], agent.parameters['user_gender']];
-        if (!color) { missingSlots.push('color'); }
-        if (!brand) { missingSlots.push('brand'); }
-        if (!category) { missingSlots.push('category'); }
+        const [color, category, gender] = [agent.parameters['product_color'], agent.parameters['product_category'], agent.parameters['user_gender']];
         if (!gender) { missingSlots.push('gender') }
+        if (!category) { missingSlots.push('category'); }
+        if (!color) { missingSlots.push('color'); }
+
         if (missingSlots.length === 1) {
-            //Ask brand
             agent.add(`Looks like you didn't provide a ${missingSlots[0]} for the product`);
+            colors.forEach(function (color, index) {
+                agent.add(new Suggestion(color))
+            });
         } else if (missingSlots.length === 2) {
-            //Ask color
-            agent.add(`Looks like you didn't provide a ${missingSlots[0]} and ${missingSlots[1]}`);
+            agent.add(`Looks like you didn't provide a ${missingSlots[0]} and ${missingSlots[1]} for the product`);
+            product_category.forEach(function (pc, index) {
+                agent.add(new Suggestion(pc));
+            });
         } else if (missingSlots.length === 3) {
-            //Ask category
             agent.add(`Looks like you didn't provide a ${missingSlots[0]}, ${missingSlots[1]} and ${missingSlots[2]}`);
-            if (gender == 'Male') {
-                men_map.forEach(function (value, key, map) {
-                    agent.add(new Suggestion(`${key}`));
-                });
-            } else if (gender == 'Female') {
-                women_map.forEach(function (value, key, map) {
-                    agent.add(new Suggestion(`${key}`));
+            agent.add(new Suggestion('Men'));
+            agent.add(new Suggestion('Women'));
+        } else {
+            let query = new AV.Query('Product');
+            query.equalTo('baseColour', color)
+            query.equalTo('mainCategory', category)
+            query.equalTo('gender', gender)
+            let products = await query.find()
+            if (products.length > 0) {
+                agent.add(`There you go, here is new collections.`)
+                products.forEach(function (product, index) {
+                    let card = new Card(product.get('title'));
+                    if (product.get('imageUrl')) {
+                        card.setImage(product.get('imageUrl'))
+                        card.setButton({ 'text': 'Detail', 'url': `${product.get('pId')}` })
+                        card.setText(product.get('description'))
+                        agent.add(card)
+                    }
                 });
             } else {
-                kid_map.forEach(function (value, key, map) {
-                    agent.add(new Suggestion(`${key}`));
-                });
+                agent.add(`product is not found`)
             }
-        } else if (missingSlots.length === 4) {
-            //Ask gender
-            agent.add(`Halo, Can you provide some informations about the product? Gender, Color, Brand and Category are required.`);
-            agent.add(`Looks like you didn't provide a ${missingSlots[0]}, ${missingSlots[1]} , ${missingSlots[2]} and ${missingSlots[3]}`);
-            agent.add(`Firstly, Can you provide the product gender? Thanks`);
-            agent.add(new Suggestion(`Male`));
-            agent.add(new Suggestion(`Female`));
-            agent.add(new Suggestion(`Kid`));
-        } else {
-            console.log(`${color} ${brand} ${category} ${gender}`);
-            let category_map;
-            if (gender == 'Male') {
-                category_map = men_map;
-            } else if (gender == 'Female') {
-                category_map = women_map;
-            }
-            else {
-                category_map = kid_map;
-            }
-            //User fill out all fields
-            let query = new AV.Query('Product2');
-            query.contains('categories', category_map.get(category));
-            query.equalTo('color_family', color);
-            query.equalTo('brand', brand);
-            query.addDescending('rating');
-            query.limit(5);
-            let products = await query.find();
-            products.forEach(function (product, index) {
-                let card = new Card(product.get('title'));
-                if (product.get('image_url_').length > 0 && product.get('product_url') !== undefined) {
-                    card.setImage(product.get('image_url_')[0].url);
-                    card.setButton({ 'text': 'Detail', 'url': product.get('product_url') });
-                    card.setText(`size system brand: ${product.get('sizesystembrand')} \n color: ${product.get('color_family')}`);
-                    agent.add(card);
-                } else {
-                    agent.add(`Sorry, this product has unexpected error, cannot show you...try again later`);
-
-                }
-            });
         }
 
     }
@@ -112,7 +87,8 @@ router.post('/', async function (req, res, next) {
         var possibleResponse1 = [
             `Hey! I'm Fashion Chatbot, your AI stylist. I can recommend you clothes and outfits selected just for you. What are you looking for today?`,
             `Hi, What are you looking for today? May be I can recommend some clothes and outfits just for you.`,
-            `Hi, what can I help you? I'm your recommender chatbot!`
+            `Hi, what can I help you? I'm your recommender chatbot!`,
+            `Hi there, I'm Fashion chatbot. What bring you here today?`
         ];
         var possibleResponse2 = [
             `The fashion AI won't collect your personal data!! You can feel free to use it!`,
@@ -128,11 +104,11 @@ router.post('/', async function (req, res, next) {
     }
 
 
-    function browseProduct(agent) {
+    async function browseProduct(agent) {
         let missingSlots = [];
         var possibleResponse1 = [
-            `Would you tell gender of the collections that you looking for?`,
-            `Would you tell us gender of the product?`
+            `Would you tell the collection that you looking for?`,
+            `What collection you looking for?`
         ];
         var possibleResponse2 = [
             `Here are our collections. Check it out!`,
@@ -141,28 +117,31 @@ router.post('/', async function (req, res, next) {
         var pick1 = Math.floor(Math.random() * possibleResponse1.length);
         var pick2 = Math.floor(Math.random() * possibleResponse2.length);
 
-        const [gender] = [agent.parameters['product_gender']];
-        if (!gender) { missingSlots.push('gender'); }
+        const [articleType] = [agent.parameters['product_articleType']];
+        if (!articleType) { missingSlots.push('articleType'); }
         if (missingSlots.length == 1) {
             agent.add(possibleResponse1[pick1]);
             agent.add(`Looks like you didn't provide a ${missingSlots[0]} for the product`);
-            agent.add(new Suggestion(`Male`));
-            agent.add(new Suggestion(`Female`));
-            agent.add(new Suggestion(`Kid`));
+            product_articleType.forEach(function (article_type, index) {
+                agent.add(new Suggestion(article_type));
+            });
         } else {
-            agent.add(possibleResponse2[pick2]);
-            if (gender == 'Male') {
-                men_map.forEach(function (value, key, map) {
-                    agent.add(new Suggestion(`${key}`));
-                });
-            } else if (gender == 'Female') {
-                women_map.forEach(function (value, key, map) {
-                    agent.add(new Suggestion(`${key}`));
+            let query = new AV.Query('Product');
+            query.equalTo('articleType', articleType)
+            let products = await query.find();
+            if (products.length > 0) {
+                agent.add(`There you go, here are new collections.`)
+                products.forEach(function (product, index) {
+                    let card = new Card(product.get('title'));
+                    if (product.get('imageUrl')) {
+                        card.setImage(product.get('imageUrl'))
+                        card.setButton({ 'text': 'Detail', 'url': `${product.get('pId')}` })
+                        card.setText(product.get('description'))
+                        agent.add(card)
+                    }
                 });
             } else {
-                kid_map.forEach(function (value, key, map) {
-                    agent.add(new Suggestion(`${key}`));
-                });
+                agent.add(`product is not found`)
             }
         }
 
@@ -197,7 +176,7 @@ router.post('/', async function (req, res, next) {
                 let card = new Card(product.get('title'));
                 if (product.get('image_url_').length > 0 && product.get('product_url') !== undefined) {
                     card.setImage(product.get('image_url_')[0].url);
-                    card.setButton({ 'text': 'Detail', 'url': product.get('product_url') });
+                    card.setButton({ 'text': 'Detail', 'url': `https://${product.get('product_url')}` });
                     card.setText(`The product Size system brand: ${product.get('sizesystembrand')} \n color: ${product.get('color_family')}`);
                     agent.add(card);
                 } else {
@@ -225,7 +204,6 @@ router.post('/', async function (req, res, next) {
             category_map = kid_map;
         }
         page = page + 5;
-        console.log(page);
         query.contains('categories', category_map.get(category));
         query.exists('image_url_');
         query.exists('product_url');
@@ -236,7 +214,7 @@ router.post('/', async function (req, res, next) {
             let card = new Card(product.get('title'));
             if (product.get('image_url_').length > 0 && product.get('product_url') !== undefined) {
                 card.setImage(product.get('image_url_')[0].url);
-                card.setButton({ 'text': 'Detail', 'url': product.get('product_url') });
+                card.setButton({ 'text': 'Detail', 'url': `https://${product.get('product_url')}` });
                 card.setText(`The product Size system brand: ${product.get('sizesystembrand')} \n color: ${product.get('color_family')}`);
                 agent.add(card);
             } else {
