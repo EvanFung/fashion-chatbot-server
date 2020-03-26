@@ -73,7 +73,7 @@ router.post('/sendStatus', async function (req, res, next) {
         console.dir(err);
     });
     res.json({
-        'hello': 'world',
+        'status': 'success',
     })
 })
 
@@ -90,7 +90,7 @@ router.post('/sendPrivateStatus', async function (req, res, next) {
             console.dir(err);
         });
     res.json({
-        'hello': 'world',
+        'status': 'success',
     })
 })
 
@@ -107,7 +107,7 @@ router.post('/queryInbox', async function (req, res, next) {
         console.dir(err);
     });
     res.json({
-        'hello': 'world',
+        'status': 'success',
     })
 })
 
@@ -125,7 +125,7 @@ router.post('/querySendingInbox', async function (req, res, next) {
         console.dir(err);
     });
     res.json({
-        'hello': 'world',
+        'status': 'success',
     })
 })
 
