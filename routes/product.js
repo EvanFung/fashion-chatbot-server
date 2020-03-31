@@ -8,10 +8,13 @@ const { colors } = require('../models/colors');
 const { product_category } = require('../models/product_category');
 const { men_map, women_map, kid_map, product_articleType } = require('../category');
 const dotenv = require('dotenv');
+const { detectIntentKnowledge } = require('../detect.v2beta');
 dotenv.config();
 const router = module.exports = new Router
 
-
+const PROJECTID = 'fashion-rec-sys-ejgagv'
+const KNOWLEDGEBASEID = 'NjE4ODg4OTI2ODk4MzY5MzMxMg'
+const languageCode = 'en'
 
 router.get('/', async function (req, res, next) {
     // let result = await customsearch.cse.list({
@@ -26,6 +29,8 @@ router.get('/', async function (req, res, next) {
     // console.log(items[0].title);
     // console.log(items[0].snippet);
     // console.log(queries);
+    console.log(req.sessionID)
+    detectIntentKnowledge('fashion-rec-sys-ejgagv', req.sessionID, 'en', 'NjE4ODg4OTI2ODk4MzY5MzMxMg', 'What can I do for you?')
     res.json({
         hello: 'world'
     });
@@ -252,6 +257,15 @@ router.post('/', async function (req, res, next) {
 
     }
 
+    // the use of knowledge base
+    async function faq(agent) {
+        console.log(agent.query)
+        // all knowledge base question will come to this intent..
+        var result = await detectIntentKnowledge(PROJECTID, req.sessionID, languageCode, KNOWLEDGEBASEID, agent.query)
+        // console.log(result)
+        agent.add(result)
+    }
+
 
     let intentMap = new Map();
     intentMap.set("product.search.detail", productSearch);
@@ -260,6 +274,7 @@ router.post('/', async function (req, res, next) {
     intentMap.set("product.browse.search", browseProductSearch);
     intentMap.set("product.browse.search - more", browseProductSearchContinue);
     intentMap.set("product.recommendation", productRecommendation);
+    intentMap.set("FAQ", faq);
     agent.handleRequest(intentMap);
 });
 

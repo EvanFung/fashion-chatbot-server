@@ -7,6 +7,9 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var uuid = require('uuid');
 var AV = require('leanengine');
+var session = require('express-session');
+const admin = require('firebase-admin')
+const serviceAccount = require('./service-account.json')
 
 // 加载云函数定义，你可以将云函数拆分到多个文件方便管理，但需要在主文件中加载它们
 require('./cloud');
@@ -34,10 +37,21 @@ app.use(AV.Cloud.CookieSession({ secret: uuid.v4(), maxAge: 3600000, fetchUser: 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(session({
+  secret: 'evanfung',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: true },
+  // genid: function (req) {
+  //   req.sessionID = uuid.v4()
+  //   return req.sessionID // use UUIDs for session IDs
+  // },
+}));
 
 app.get('/', function (req, res) {
   res.render('index', { currentTime: new Date() });
 });
+
 
 // 可以将一类的路由单独保存在一个文件中
 app.use('/todos', require('./routes/todos'));
