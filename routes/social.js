@@ -63,8 +63,8 @@ router.post('/sendStatus', async function (req, res, next) {
     const { followerSessionId, messages } = req.body
     console.log(messages)
 
-    var status = new AV.Status('视频url', '我喜欢了视频xxxx.');
-    status.set('sound', 'sound.wmv');
+    var status = new AV.Status();
+    status.set('event', messages);
     AV.Status.sendStatusToFollowers(status, { "sessionToken": followerSessionId }).then(function (status) {
         //发布状态成功，返回状态信息
         console.dir(status);
