@@ -30,13 +30,42 @@ router.post('/', async function (req, res, next) {
     })
 })
 
+
+router.post('/userId', async function (req, res, next) {
+    const { userId } = req.body
+    let query = new AV.Query('Tweet')
+    let createBy = AV.Object.createWithoutData('createBy', userId)
+    query.equalTo('createBy', createBy)
+    query.include('createBy')
+    query.include('image')
+    let tweets = await query.find()
+    res.json(
+        {
+            tweets
+        }
+    )
+})
+
 router.delete('/', async function (req, res, next) {
     const { tweetID } = req.body
     let tweet = AV.Object.createWithoutData('Tweet', tweetID);
     await tweet.destroy();
     res.json({
-        'status': 'susscess',
+        'status': 'success',
         'message': 'Tweet has been destroy',
+    })
+})
+
+
+router.post('/like', async function (req, res, next) {
+    const { tweetID } = req.body
+    console.log(tweetID)
+    let tweet = AV.Object.createWithoutData('Tweet', tweetID)
+    tweet.increment('likes', 1)
+    await tweet.save()
+    res.json({
+        "status": "success",
+        "message": "successfully update likes"
     })
 })
 

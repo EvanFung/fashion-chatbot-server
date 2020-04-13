@@ -4,6 +4,15 @@ const AV = require('leanengine');
 const router = module.exports = new Router
 
 router.get('/', async function (req, res, next) {
+    // let query = new AV.Query('_User')
+    // let users = await query.find()
+    // console.log(users)
+    // let profilePic = AV.Object.createWithoutData('_File', '5e836db38a84ab008cd35b8f')
+    // console.log(users.length)
+    // users.forEach(function (user, index) {
+    //     user.set('profilePic', profilePic)
+    //     user.save()
+    // })
     res.json({
         'hello': 'This is social platform API'
     })
@@ -52,6 +61,7 @@ router.post('/queryFollower', async function (req, res, next) {
     const { followerSessionId } = req.body
     let currentUser = await AV.User.become(followerSessionId)
     let query = currentUser.followerQuery()
+    query.include('follower')
     let followers = await query.find()
     res.json({
         'followers': followers
@@ -60,20 +70,28 @@ router.post('/queryFollower', async function (req, res, next) {
 
 //当前登录用户发送一条Status给关注他的粉丝
 router.post('/sendStatus', async function (req, res, next) {
-    const { followerSessionId, messages } = req.body
-    console.log(messages)
+    const { followerSessionId, tweet } = req.body
+    let queryTweet = new AV.Query('Tweet')
+    queryTweet.equalTo('objectId', tweet['objectId'])
+    queryTweet.include('createBy')
+    queryTweet.include('image')
 
-    var status = new AV.Status();
-    status.set('event', messages);
-    AV.Status.sendStatusToFollowers(status, { "sessionToken": followerSessionId }).then(function (status) {
-        //发布状态成功，返回状态信息
-        console.dir(status);
-    }, function (err) {
-        //发布失败
-        console.dir(err);
-    });
+    let thisTweet = await queryTweet.first()
+    let authorName = thisTweet.get('createBy').get('username')
+    let imageUrl = thisTweet.get('image').get('url')
+    let tweetPointer = AV.Object.createWithoutData('Tweet', tweet['objectId'])
+    var status = new AV.Status(imageUrl, thisTweet.get('description'));
+    status.set('authorName', authorName)
+    status.set('likes', thisTweet.get('likes'))
+    status.set('imageID', thisTweet.get('image').get('objectId'))
+    status.set('creatorID', thisTweet.get('createBy').get('objectId'))
+    status.set('tweet', tweetPointer)
+    status.set('location', thisTweet.get('location'))
+    let result = await AV.Status.sendStatusToFollowers(status, { "sessionToken": followerSessionId })
     res.json({
-        'status': 'success',
+        'status': 'success sent a tweet!',
+        result,
+        thisTweet
     })
 })
 
@@ -99,15 +117,28 @@ router.post('/queryInbox', async function (req, res, next) {
     const { followerSessionId } = req.body
     let currentUser = await AV.User.become(followerSessionId)
     let query = AV.Status.inboxQuery(currentUser)
-    query.find().then(function (statuses) {
-        //查询成功，返回状态列表，每个对象都是 AV.Status
-        console.log(statuses)
-    }, function (err) {
-        //查询失败
-        console.dir(err);
-    });
+    query.include('tweet')
+    query.include('source')
+    let statuses = await query.find();
     res.json({
-        'status': 'success',
+        statuses
+    })
+})
+
+
+router.post('/queryInboxAndSendingBox', async function (req, res, next) {
+    const { followerSessionId } = req.body
+    let currentUser = await AV.User.become(followerSessionId)
+    let queryInbox = AV.Status.inboxQuery(currentUser)
+    let querySendingBox = AV.Status.statusQuery(currentUser)
+    queryInbox.sinceId()
+    let inboxStatus = await queryInbox.find()
+    console.log(inboxStatus)
+    let sendingStatus = await querySendingBox.find()
+    console.log(sendingStatus)
+    let combinedStatus = [...inboxStatus, ...sendingStatus];
+    res.json({
+        'statuses': combinedStatus
     })
 })
 
